@@ -200,8 +200,10 @@ function App() {
         console.warn('Access token expired, attempting refresh');
         const newToken = await refreshAccessToken();
         if (newToken) {
-          args[0] = args[0].replace(/access_token=[^&]*/, `access_token=${newToken}`);
-          return await fetchFn(...args);
+          if (args[0] && typeof args[0] === 'string') {
+            args[0] = args[0].replace(/access_token=[^&]*/, `access_token=${newToken}`);
+          }
+          return await fetchFn(newToken, ...args);
         }
         throw new Error('Unable to refresh access token');
       }
@@ -215,8 +217,8 @@ function App() {
     const refresh = params.get('refresh_token');
 
     const fetchUserPlaylists = async (token) => {
-      return fetchWithTokenRefresh(async () => {
-        const res = await axios.get(`${API_BASE_URL}/spotify/user-playlists?access_token=${token}`);
+      return fetchWithTokenRefresh(async (currentToken) => {
+        const res = await axios.get(`${API_BASE_URL}/spotify/user-playlists?access_token=${currentToken}`);
         setPlaylists(res.data);
         setError(null);
         return res;
@@ -252,8 +254,8 @@ function App() {
       });
       batches.push(
         fetchWithTokenRefresh(
-          async () => {
-            const res = await axios.get(`${API_BASE_URL}/spotify/artist-genres?${queryParams}`);
+          async (currentToken) => {
+            const res = await axios.get(`${API_BASE_URL}/spotify/artist-genres?access_token=${currentToken}&artist_ids=${queryParams.get('artist_ids')}`);
             return res.data;
           },
           `${API_BASE_URL}/spotify/artist-genres?${queryParams}`
@@ -273,8 +275,8 @@ function App() {
       artists: encodeURIComponent(JSON.stringify(artists))
     });
     return fetchWithTokenRefresh(
-      async () => {
-        const res = await axios.get(`${API_BASE_URL}/spotify/artist-genres-lastfm?${queryParams}`);
+      async (currentToken) => {
+        const res = await axios.get(`${API_BASE_URL}/spotify/artist-genres-lastfm?access_token=${currentToken}&artists=${queryParams.get('artists')}`);
         return res.data;
       },
       `${API_BASE_URL}/spotify/artist-genres-lastfm?${queryParams}`
@@ -299,7 +301,7 @@ function App() {
     try {
       setLoadingGenres(true);
       const res = await fetchWithTokenRefresh(
-        async () => await axios.get(`${API_BASE_URL}/spotify/playlist-tracks?access_token=${accessToken}&playlist_id=${playlistId}`),
+        async (currentToken) => await axios.get(`${API_BASE_URL}/spotify/playlist-tracks?access_token=${currentToken}&playlist_id=${playlistId}`),
         `${API_BASE_URL}/spotify/playlist-tracks?access_token=${accessToken}&playlist_id=${playlistId}`
       );
       const songs = res.data;
@@ -503,12 +505,12 @@ function App() {
     try {
       setError(null);
       const res = await fetchWithTokenRefresh(
-        async () => await axios.post(`${API_BASE_URL}/spotify/create-playlist`, {
-          access_token: accessToken,
+        async (currentToken) => await axios.post(`${API_BASE_URL}/spotify/create-playlist`, {
+          access_token: currentToken,
           name: playlistName,
           trackUris
         }),
-        null
+        accessToken
       );
       alert(`🎉 Playlist created!\n${res.data.playlistUrl} `);
     } catch {
@@ -603,10 +605,13 @@ function App() {
     setDedupError(null);
     setDedupResult(null);
     try {
-      const res = await axios.post(`${API_BASE_URL}/spotify/deduplicate-playlist`, {
-        access_token: accessToken,
-        playlist_id: selectedPlaylist
-      });
+      const res = await fetchWithTokenRefresh(
+        async (currentToken) => await axios.post(`${API_BASE_URL}/spotify/deduplicate-playlist`, {
+          access_token: currentToken,
+          playlist_id: selectedPlaylist
+        }),
+        accessToken
+      );
       setDedupResult({ removed: res.data.removed });
       await handlePlaylistSelect({ target: { value: selectedPlaylist } });
     } catch {
