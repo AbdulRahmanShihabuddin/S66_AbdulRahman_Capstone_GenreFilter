@@ -287,7 +287,7 @@ app.get('/spotify/artist-genres-lastfm', async (req, res) => {
 });
 
 app.post('/spotify/create-playlist', async (req, res) => {
-  const { access_token, name, trackUris } = req.body;
+  const { access_token, name, description, trackUris } = req.body;
   try {
     const userResponse = await axios.get('https://api.spotify.com/v1/me', {
       headers: { 'Authorization': `Bearer ${access_token}` }
@@ -296,6 +296,7 @@ app.post('/spotify/create-playlist', async (req, res) => {
 
     const playlistResponse = await axios.post(`https://api.spotify.com/v1/users/${userId}/playlists`, {
       name: name,
+      description: description || '',
       public: true
     }, {
       headers: { 'Authorization': `Bearer ${access_token}` }

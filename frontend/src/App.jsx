@@ -142,6 +142,7 @@ function App() {
   const [dedupResult, setDedupResult] = useState(null);
   const [showAllGenres, setShowAllGenres] = useState(false); // Toggle for genre dropdown
   const [customPlaylistName, setCustomPlaylistName] = useState(''); // New state for custom playlist name
+  const [customPlaylistDescription, setCustomPlaylistDescription] = useState(''); // New state for playlist description
 
   // Modal state
   const [genreModalOpen, setGenreModalOpen] = useState(false);
@@ -495,6 +496,7 @@ function App() {
     const trackUris = filteredSongs.filter(item => item?.track?.uri).map(item => item.track.uri);
     // Use custom name if provided, else default
     const playlistName = customPlaylistName.trim() || (selectedGenres.length ? `My ${selectedGenres.join(', ')} Playlist` : 'My Filtered Playlist');
+    const playlistDescription = customPlaylistDescription.trim();
 
     try {
       setError(null);
@@ -502,6 +504,7 @@ function App() {
         async (currentToken) => await axios.post(`${API_BASE_URL}/spotify/create-playlist`, {
           access_token: currentToken || accessToken,
           name: playlistName,
+          description: playlistDescription,
           trackUris
         })
       );
@@ -902,21 +905,30 @@ function App() {
               </ErrorBoundary>
 
               {/* Create Playlist Section */}
-              <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t border-border">
+              <div className="flex flex-col gap-3 mt-6 pt-6 border-t border-border">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    value={customPlaylistName}
+                    onChange={e => setCustomPlaylistName(e.target.value)}
+                    placeholder="Enter playlist name..."
+                    className="input flex-1"
+                  />
+                  <button
+                    onClick={createPlaylist}
+                    className="btn-primary rounded-full whitespace-nowrap"
+                  >
+                    <span className="mr-2">✨</span>
+                    Create Playlist
+                  </button>
+                </div>
                 <input
                   type="text"
-                  value={customPlaylistName}
-                  onChange={e => setCustomPlaylistName(e.target.value)}
-                  placeholder="Enter playlist name..."
-                  className="input flex-1"
+                  value={customPlaylistDescription}
+                  onChange={e => setCustomPlaylistDescription(e.target.value)}
+                  placeholder="Enter playlist description (optional)..."
+                  className="input w-full"
                 />
-                <button
-                  onClick={createPlaylist}
-                  className="btn-primary whitespace-nowrap"
-                >
-                  <span className="mr-2">✨</span>
-                  Create Playlist
-                </button>
               </div>
             </div>
           )}
@@ -1020,7 +1032,7 @@ function App() {
               </select>
               <button
                 onClick={handleAddUserGenre}
-                className="btn-primary px-4"
+                className="btn-primary px-4 rounded-full"
                 disabled={genreModalLoading || !genreAddValue}
               >
                 {genreModalLoading ? <ClipLoader color="#0a0a0a" size={16} /> : '+'}

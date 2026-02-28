@@ -25,7 +25,7 @@ function DedupBar({
 
         {/* Button */}
         <button
-          className="btn-primary"
+          className="btn-primary rounded-full"
           onClick={handleDeduplicate}
           disabled={dedupLoading}
         >
