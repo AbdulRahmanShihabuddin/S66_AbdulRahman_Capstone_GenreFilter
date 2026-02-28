@@ -172,6 +172,27 @@ app.get('/spotify/playlist-tracks', async (req, res) => {
   }
 });
 
+app.get('/spotify/liked-songs', async (req, res) => {
+  const { access_token } = req.query;
+  try {
+    let allTracks = [];
+    let next = `https://api.spotify.com/v1/me/tracks?limit=50`;
+
+    while (next) {
+      const response = await axios.get(next, {
+        headers: { 'Authorization': `Bearer ${access_token}` }
+      });
+      allTracks = allTracks.concat(response.data.items);
+      next = response.data.next;
+    }
+
+    res.json(allTracks);
+  } catch (error) {
+    console.error('Liked songs error:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ error: 'Failed to fetch liked songs' });
+  }
+});
+
 app.get('/spotify/artist-genres', async (req, res) => {
   const { access_token, artist_ids } = req.query;
   let artistIds;

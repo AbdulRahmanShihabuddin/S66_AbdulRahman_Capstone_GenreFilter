@@ -297,7 +297,12 @@ function App() {
     try {
       setLoadingGenres(true);
       const res = await fetchWithTokenRefresh(
-        async (currentToken) => await axios.get(`${API_BASE_URL}/spotify/playlist-tracks?access_token=${currentToken || accessToken}&playlist_id=${playlistId}`)
+        async (currentToken) => {
+          if (playlistId === 'liked-songs') {
+            return await axios.get(`${API_BASE_URL}/spotify/liked-songs?access_token=${currentToken || accessToken}`);
+          }
+          return await axios.get(`${API_BASE_URL}/spotify/playlist-tracks?access_token=${currentToken || accessToken}&playlist_id=${playlistId}`);
+        }
       );
       const songs = res.data;
 
@@ -799,6 +804,7 @@ function App() {
                 className="select"
               >
                 <option value="">Choose a playlist...</option>
+                <option value="liked-songs">❤️ Liked Songs</option>
                 {playlists.map(p => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -821,6 +827,16 @@ function App() {
               <button className="btn-secondary opacity-50 cursor-not-allowed" disabled>
                 Deduplicate
               </button>
+            </div>
+          ) : selectedPlaylist === 'liked-songs' ? (
+            <div className="card text-center mb-6">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-surface flex items-center justify-center">
+                <span className="text-2xl">🧹</span>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Deduplicate Playlist</h3>
+              <p className="text-secondary text-sm">
+                Deduplication is not supported for your Liked Songs library.
+              </p>
             </div>
           ) : (
             <DedupBar
