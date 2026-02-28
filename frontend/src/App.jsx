@@ -503,7 +503,7 @@ function App() {
     try {
       setError(null);
       const res = await fetchWithTokenRefresh(
-        async () => await axios.post(`${API_BASE_URL} /spotify/create - playlist`, {
+        async () => await axios.post(`${API_BASE_URL}/spotify/create-playlist`, {
           access_token: accessToken,
           name: playlistName,
           trackUris
@@ -603,7 +603,7 @@ function App() {
     setDedupError(null);
     setDedupResult(null);
     try {
-      const res = await axios.post(`${API_BASE_URL} /spotify/deduplicate - playlist`, {
+      const res = await axios.post(`${API_BASE_URL}/spotify/deduplicate-playlist`, {
         access_token: accessToken,
         playlist_id: selectedPlaylist
       });
@@ -619,7 +619,7 @@ function App() {
   const fetchUserGenres = async (trackId) => {
     if (!spotifyUserId || !trackId) return [];
     try {
-      const res = await axios.get(`${API_BASE_URL} /user/track - genres`, {
+      const res = await axios.get(`${API_BASE_URL}/user/track-genres`, {
         params: { userId: spotifyUserId, trackId }
       });
       return res.data.genres || [];
@@ -654,7 +654,7 @@ function App() {
     setModalError(null);
     setModalSuccess(null);
     try {
-      await axios.post(`${API_BASE_URL} /user/track - genres`, {
+      await axios.post(`${API_BASE_URL}/user/track-genres`, {
         userId: spotifyUserId,
         trackId: modalTrack.track.id,
         genre: genreAddValue
@@ -677,7 +677,7 @@ function App() {
     setModalError(null);
     setModalSuccess(null);
     try {
-      await axios.delete(`${API_BASE_URL} /user/track - genres`, {
+      await axios.delete(`${API_BASE_URL}/user/track-genres`, {
         data: { userId: spotifyUserId, trackId: modalTrack.track.id, genre }
       });
       const updatedGenres = await fetchUserGenres(modalTrack.track.id);
