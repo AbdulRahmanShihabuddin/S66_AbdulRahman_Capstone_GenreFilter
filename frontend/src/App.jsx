@@ -200,10 +200,7 @@ function App() {
         console.warn('Access token expired, attempting refresh');
         const newToken = await refreshAccessToken();
         if (newToken) {
-          if (args[0] && typeof args[0] === 'string') {
-            args[0] = args[0].replace(/access_token=[^&]*/, `access_token=${newToken}`);
-          }
-          return await fetchFn(newToken, ...args);
+          return await fetchFn(newToken);
         }
         throw new Error('Unable to refresh access token');
       }
@@ -218,11 +215,11 @@ function App() {
 
     const fetchUserPlaylists = async (token) => {
       return fetchWithTokenRefresh(async (currentToken) => {
-        const res = await axios.get(`${API_BASE_URL}/spotify/user-playlists?access_token=${currentToken}`);
+        const res = await axios.get(`${API_BASE_URL}/spotify/user-playlists?access_token=${currentToken || token}`);
         setPlaylists(res.data);
         setError(null);
         return res;
-      }, `${API_BASE_URL}/spotify/user-playlists?access_token=${token}`);
+      });
     };
 
     if (token && refresh) {
@@ -255,10 +252,9 @@ function App() {
       batches.push(
         fetchWithTokenRefresh(
           async (currentToken) => {
-            const res = await axios.get(`${API_BASE_URL}/spotify/artist-genres?access_token=${currentToken}&artist_ids=${queryParams.get('artist_ids')}`);
+            const res = await axios.get(`${API_BASE_URL}/spotify/artist-genres?access_token=${currentToken || accessToken}&artist_ids=${encodeURIComponent(JSON.stringify(batch))}`);
             return res.data;
-          },
-          `${API_BASE_URL}/spotify/artist-genres?${queryParams}`
+          }
         ).catch(err => {
           console.error(`Artist genre batch ${i / 25 + 1} failed:`, err.response?.data || err.message);
           return [];
@@ -276,10 +272,9 @@ function App() {
     });
     return fetchWithTokenRefresh(
       async (currentToken) => {
-        const res = await axios.get(`${API_BASE_URL}/spotify/artist-genres-lastfm?access_token=${currentToken}&artists=${queryParams.get('artists')}`);
+        const res = await axios.get(`${API_BASE_URL}/spotify/artist-genres-lastfm?access_token=${currentToken || accessToken}&artists=${encodeURIComponent(JSON.stringify(artists))}`);
         return res.data;
-      },
-      `${API_BASE_URL}/spotify/artist-genres-lastfm?${queryParams}`
+      }
     ).catch(err => {
       console.error('Last.fm genre fetch failed:', err.response?.data || err.message);
       return [];
@@ -301,8 +296,7 @@ function App() {
     try {
       setLoadingGenres(true);
       const res = await fetchWithTokenRefresh(
-        async (currentToken) => await axios.get(`${API_BASE_URL}/spotify/playlist-tracks?access_token=${currentToken}&playlist_id=${playlistId}`),
-        `${API_BASE_URL}/spotify/playlist-tracks?access_token=${accessToken}&playlist_id=${playlistId}`
+        async (currentToken) => await axios.get(`${API_BASE_URL}/spotify/playlist-tracks?access_token=${currentToken || accessToken}&playlist_id=${playlistId}`)
       );
       const songs = res.data;
 
@@ -506,11 +500,10 @@ function App() {
       setError(null);
       const res = await fetchWithTokenRefresh(
         async (currentToken) => await axios.post(`${API_BASE_URL}/spotify/create-playlist`, {
-          access_token: currentToken,
+          access_token: currentToken || accessToken,
           name: playlistName,
           trackUris
-        }),
-        accessToken
+        })
       );
       alert(`🎉 Playlist created!\n${res.data.playlistUrl} `);
     } catch {
@@ -607,10 +600,9 @@ function App() {
     try {
       const res = await fetchWithTokenRefresh(
         async (currentToken) => await axios.post(`${API_BASE_URL}/spotify/deduplicate-playlist`, {
-          access_token: currentToken,
+          access_token: currentToken || accessToken,
           playlist_id: selectedPlaylist
-        }),
-        accessToken
+        })
       );
       setDedupResult({ removed: res.data.removed });
       await handlePlaylistSelect({ target: { value: selectedPlaylist } });
